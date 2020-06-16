@@ -22,6 +22,10 @@ Detailed GPU time are presented as follows:
 * Kernel execution time
 * Data transfer from GPU to CPU time
 
+## Specification of the GPU used for this assignment, and version
+
+![alt text][image1]
+
 ## How to run
 
 * Make it executabel
@@ -31,6 +35,4 @@ Detailed GPU time are presented as follows:
 
 `./name`
 
-## Specification of the GPU used for this assignment
 
-![alt text][image1]
