@@ -4,4 +4,4 @@ CUDA/OpenGL/OpenCL/... programming assignments
 
 ---
 
-* ## Detailed description please refer to each folder.
+* ## Please refer to each folder for detailed description.
