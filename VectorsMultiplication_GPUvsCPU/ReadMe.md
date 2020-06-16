@@ -29,6 +29,7 @@ Detailed GPU time are presented as follows:
 ## How to run
 
 * Make it executabel
+
 `nvcc -o name assignment1_final.cu`
 
 * Run
