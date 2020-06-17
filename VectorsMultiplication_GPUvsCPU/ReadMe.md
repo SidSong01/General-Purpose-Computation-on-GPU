@@ -24,6 +24,8 @@ Detailed GPU time are presented as follows:
 
 ## Specification of the GPU used for this assignment, and version
 
+GPU model: NVIDIA Tesla K20m
+
 ![alt text][image1]
 
 ## How to run
