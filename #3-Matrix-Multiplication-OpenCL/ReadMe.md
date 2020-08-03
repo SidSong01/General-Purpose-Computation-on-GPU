@@ -10,4 +10,4 @@ This is an OpenCL program that takes as inputs two square matrices A and B with 
 
 * Execute
 
-`./main`
+`$ ./main`
