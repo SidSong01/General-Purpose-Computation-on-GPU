@@ -2,24 +2,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <CL/cl.h>
-#define N 40
-#define BLOCK_SIZE 10
+#define N 40  // matrix length, 40 * 40
+#define BLOCK_SIZE 8 // change in {1, 2, 4, 8, 10, 20}
 
 char* loadProgSource(const char* filename, const char* preamble, size_t *sz) {
   FILE* fptr = NULL;
   size_t szSource, szPreamble, howmany;
   char* sourceString;
 
-
+  // Open the OpenCL source code file
   fptr = fopen(filename, "r");
   szPreamble = strlen(preamble);
 
-
+  // Get the length of the source code
   fseek(fptr, 0, SEEK_END);
   szSource = ftell(fptr);
   fseek(fptr, 0, SEEK_SET);
 
-
+  // Allocate a buffer for the source code string and read it in
   sourceString = (char *) calloc(szSource + szPreamble+1, sizeof(char));
   howmany = fread((sourceString) + szPreamble, szSource, 1, fptr);
   fclose(fptr);
@@ -28,23 +28,13 @@ char* loadProgSource(const char* filename, const char* preamble, size_t *sz) {
   return sourceString;
 }
 
-void print(float *A){
-  size_t width = N, y, x;
-  for(y = 0; y < width; y++){
-    for(x = 0; x < width; x++){
-      printf("%.2f ", A[y * width + x]);
-    }
-    printf("\n");
-  }
-}
-
-
 int main(){
   cl_float *inputMatrix1;
   cl_float *inputMatrix2;
   cl_float *results;
   cl_uint width = N;
 
+  // Profiling variables
   cl_event event;
   cl_ulong start, end;
 
@@ -79,38 +69,38 @@ int main(){
     }
   }
 
-
+  // Retrives a list of platforms available
   if (clGetPlatformIDs(1, &platform_id, &num_of_platforms) != CL_SUCCESS) {
     printf("Unable to get platform_id\n");
     return 1;
   }
 
-
+  // Get a supported GPU device
   if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id,
      &num_of_devices) != CL_SUCCESS) {
      printf("Unable to get device_id\n");
      return 1;
   }
 
-
+  // Context properties list (must be terminated with 0)
   properties[0] = CL_CONTEXT_PLATFORM;
   properties[1] = (cl_context_properties) platform_id;
   properties[2] = 0;
 
-
+  // Create a context with the GPU device
   context = clCreateContext(properties, 1, &device_id, NULL, NULL, &err);
 
-
+  // Create a command queue using the context and device
   command_queue = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
 
-
+  // Load kernel file, prepend static info, and return total kernel size
   kernelSource = loadProgSource("matmul.cl", "", &kernelSize);
 
-
+  // Create a program from the kernel source code
   program = clCreateProgramWithSource(context, 1, (const char **)
             &kernelSource, NULL, &err);
 
-
+  // Compile the program
   if (clBuildProgram(program, 0, NULL, NULL, NULL, NULL) != CL_SUCCESS) {
      printf("Error building program\n");
 
@@ -128,10 +118,10 @@ int main(){
      return 1;
   }
 
-
+  // Specify which kernel from the program to execute
   kernel = clCreateKernel(program, "matmul", &err);
 
-
+  // Create buffers for the input and output
   A = clCreateBuffer(context, CL_MEM_READ_ONLY,
           sizeof(float) * width * width, NULL, NULL);
   B = clCreateBuffer(context, CL_MEM_READ_ONLY,
@@ -139,17 +129,18 @@ int main(){
   C = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
           sizeof(float) * width * width, NULL, NULL);
 
-
+  // Load data into the input buffer
   clEnqueueWriteBuffer(command_queue, A, CL_TRUE, 0,
                        sizeof(float) * width * width, inputMatrix1, 0, NULL, NULL);
   clEnqueueWriteBuffer(command_queue, B, CL_TRUE, 0,
                        sizeof(float) * width * width, inputMatrix2, 0, NULL, NULL);
 
+// Set the argument list for the kernel command
   clSetKernelArg(kernel, 0, sizeof(cl_mem), &A);
   clSetKernelArg(kernel, 1, sizeof(cl_mem), &B);
   clSetKernelArg(kernel, 2, sizeof(cl_mem), &C);
 
-
+  // Enqueue the kernel command for execution
   clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, global,
                          local, 0, NULL, &event);
   clWaitForEvents(1, &event);
@@ -161,11 +152,11 @@ int main(){
   cl_double miliSeconds = (cl_double)(end - start) * (cl_double)(1e-06);
   printf("The kernel took %.4lf ms\n", miliSeconds);
 
-
+  // Copy the results from out of the output buffer
   clEnqueueReadBuffer(command_queue, C, CL_TRUE, 0,
                       sizeof(float) * width * width, results, 0, NULL, NULL);
 
-
+  // Cleanup (release OpenCL resources)
   clReleaseContext(context);
   clReleaseCommandQueue(command_queue);
   clReleaseProgram(program);
